@@ -68,14 +68,14 @@ Return Fn.RoundWithAcc(Yn, Acc);
 EndDefine;
 
 Define PrepareCordic()
-Acc := 15;
+Acc := 20;
 L := [];
 For N := 0 To 40 Do
 	Value := Fn.ArcTanN(Fn.PowN(2, -N, Acc), Acc);
 	Append(L,Value);
 EndFor;
 MEMORY.APCOCOA.ELEMFNS.ARCTANLIST := L; 
-MEMORY.APCOCOA.ELEMFNS.KINVERS :=  1 / $.ComputeK(15); 
+MEMORY.APCOCOA.ELEMFNS.KINVERS :=  1 / $.ComputeK(Acc); 
 EndDefine;
 
 
@@ -83,8 +83,20 @@ Define SinCordic(Val)
 List := MEMORY.APCOCOA.ELEMFNS.ARCTANLIST;
 Acc := 10;
 Iterations := Acc*4;
-X := Fn.LogN(2,Iterations*4,0); 
+X := Fn.LogN(2,Iterations*4,0);
+Pi := Fn.PiN(Acc+X); 
 Val := Comp(Fn.ReduceModPi(Val, Acc+X),1);
+Mult := 1;
+If Val > Pi / 2 Then
+	Val := Val - Pi;
+	Mult := -1;
+Else 
+	If Val < -1*Pi/2 Then
+		Val := Val + Pi;
+		Mult := -1;
+	EndIf;
+EndIf;
+
 N := 0;
 Xn := MEMORY.APCOCOA.ELEMFNS.KINVERS;
 Yn := 0;
@@ -102,7 +114,7 @@ While N < 32 Do
 	Xn := Xn1;
 	N := N+1;
 EndWhile;
-Return Fn.RoundWithAcc(Yn, Acc);
+Return Mult * Fn.RoundWithAcc(Yn, Acc);
 EndDefine;
 
 
