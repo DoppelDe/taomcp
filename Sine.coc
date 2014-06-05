@@ -1,0 +1,110 @@
+
+Package $Sine
+
+Alias Fn := $apcocoa/elemfns;
+
+Define RuntimeTest(Acc)
+I:=1;
+While I <= 100 Do
+	I:=I+1;
+	For J:=0 To 50 Do 
+		A := $.SinCordic(I/100);
+	EndFor;
+EndWhile;
+EndDefine;
+
+// TODO wie viele iterations?
+Define ComputeK(Acc)
+Iterations := 4*Acc;
+X := Fn.LogN(2,Iterations*2,0); 
+K := 1;
+I := 0;
+While I <= Iterations Do
+	K := K * Fn.RootN(
+		1+Fn.PowN(2,-2*I,Acc+X), 2, Acc+X);
+	I := I+1;
+EndWhile;
+Return K;
+EndDefine;
+
+Define MedPi(E,P) 
+
+Return Fn.PiN(E+P);
+EndDefine;
+
+Define ReduceRange(Val,Acc)
+P := 20;
+N := 53;
+E := Fn.LogN(2, Val, Acc)+1;
+X := Val * Fn.PowN(2,n-1-e,Acc);
+Med := MedPi(E,P);
+H := Med * X * Fn.PowN(2,-2*n-p,Acc);
+Return Val;
+EndDefine;
+
+// TODO wie viele iterations?
+Define SinCordicN(Val,Acc)
+Iterations := Acc*4;
+X := Fn.LogN(2,Iterations*4,0); 
+Val := $.ReduceRange(Val,Acc+X);
+N := 0;
+Xn := 1 / $.ComputeK(Acc+X);
+Yn := 0;
+Zn := Val;
+While N <= Iterations Do
+	D := 0;
+	If Zn >= 0 Then
+		D := 1;
+	Else 
+		D := -1;
+	EndIf;
+	Xn1 := Xn - D * Yn * Fn.PowN(2, -N, Acc+X);
+	Yn := Yn + D * Xn * Fn.PowN(2, -N, Acc+X);
+	Zn := Zn - D * Fn.ArcTanN(Fn.PowN(2, -N, Acc+X), Acc+X);
+	Xn := Xn1;
+	N := N+1;
+EndWhile;
+Return Fn.RoundWithAcc(Yn, Acc);
+EndDefine;
+
+Define PrepareCordic()
+Acc := 15;
+L := [];
+For N := 0 To 40 Do
+	Value := Fn.ArcTanN(Fn.PowN(2, -N, Acc), Acc);
+	Append(L,Value);
+EndFor;
+MEMORY.APCOCOA.ELEMFNS.ARCTANLIST := L; 
+MEMORY.APCOCOA.ELEMFNS.KINVERS :=  1 / $.ComputeK(15); 
+EndDefine;
+
+
+Define SinCordic(Val)
+List := MEMORY.APCOCOA.ELEMFNS.ARCTANLIST;
+Acc := 10;
+Iterations := Acc*4;
+X := Fn.LogN(2,Iterations*4,0); 
+Val := Comp(Fn.ReduceModPi(Val, Acc+X),1);
+N := 0;
+Xn := MEMORY.APCOCOA.ELEMFNS.KINVERS;
+Yn := 0;
+Zn := Val;
+While N < 32 Do
+	D := 0;
+	If Zn >= 0 Then
+		D := 1;
+	Else 
+		D := -1;
+	EndIf;
+	Xn1 := Xn - D * Yn * Fn.PowN(2, -N, Acc+X);
+	Yn := Yn + D * Xn * Fn.PowN(2, -N, Acc+X);
+	Zn := Zn - D * List[N+1];
+	Xn := Xn1;
+	N := N+1;
+EndWhile;
+Return Fn.RoundWithAcc(Yn, Acc);
+EndDefine;
+
+
+// MEMORY.APCOCOA.ELEMFNS.ACCURACY
+EndPackage;
