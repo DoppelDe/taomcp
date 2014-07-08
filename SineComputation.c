@@ -217,6 +217,21 @@ static double PIo2[] = { 1.57079625129699707031e+00, /* 0x3FF921FB, 0x40000000 *
 
 static double one = 1.0, twon24 = 5.96046447753906250000e-08; /* 0x3E700000, 0x00000000 */
 
+/*
+Copied from FDLIBM:
+
+FDLIBM (Freely Distributable LIBM) is a C math library 
+for machines that support IEEE 754 floating-point arithmetic. 
+In this release, only double precision is supported.
+
+FDLIBM is intended to provide a reasonably portable (see 
+assumptions below), reference quality (below one ulp for
+major functions like sin,cos,exp,log) math library 
+(libm.a).  For a copy of FDLIBM, please see
+	http://www.netlib.org/fdlibm/
+or
+	http://www.validlab.com/software/
+*/
 int __kernel_rem_pio2(double *x, double *y, int e0, int nx, int prec,
 		const int *ipio2) {
 	int jz, jx, jv, jp, jk, carry, n, iq[20], i, j, k, m, q0, ih;
