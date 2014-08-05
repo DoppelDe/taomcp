@@ -8,28 +8,33 @@
  ============================================================================
  */
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <sys/time.h>
+#include <stdio.h>
 #include <stdint.h>
+#include <windows.h>
 
-double taylorSine(double value, int accuracy) {
-	double i = 1;
-	double q = value * value;
-	double sine = value;
-	double nextTerm = value;
-	double sign = -1;
-	double accVal = 1 / pow(10, accuracy);
+double PCFreq = 0.0;
+__int64 CounterStart = 0;
 
-	while (fabs(nextTerm) > accVal) {
-		nextTerm = nextTerm * q / (2 * i * (2 * i + 1));
-		sine = sine + sign * nextTerm;
-		sign = -sign;
-		i++;
-	}
-	return sine;
+void StartCounter() {
+	LARGE_INTEGER li;
+	if (!QueryPerformanceFrequency(&li))
+		return;
+
+	PCFreq = (double) (li.QuadPart) / 1000000.0;
+
+	QueryPerformanceCounter(&li);
+	CounterStart = li.QuadPart;
 }
+double GetCounter() {
+	LARGE_INTEGER li;
+	QueryPerformanceCounter(&li);
+	return (double) (li.QuadPart - CounterStart) / PCFreq;
+}
+
+
 
 double arcTans[] = { 0.7853981633974482789994908671360462903976,
 		0.4636476090008060935154787784995278343558,
@@ -220,13 +225,13 @@ static double one = 1.0, twon24 = 5.96046447753906250000e-08; /* 0x3E700000, 0x0
 /*
 Copied from FDLIBM:
 
-FDLIBM (Freely Distributable LIBM) is a C math library 
-for machines that support IEEE 754 floating-point arithmetic. 
+FDLIBM (Freely Distributable LIBM) is a C math library
+for machines that support IEEE 754 floating-point arithmetic.
 In this release, only double precision is supported.
 
-FDLIBM is intended to provide a reasonably portable (see 
+FDLIBM is intended to provide a reasonably portable (see
 assumptions below), reference quality (below one ulp for
-major functions like sin,cos,exp,log) math library 
+major functions like sin,cos,exp,log) math library
 (libm.a).  For a copy of FDLIBM, please see
 	http://www.netlib.org/fdlibm/
 or
@@ -643,21 +648,52 @@ double calculatePi() {
 	return sqrt(sum);
 }
 
+double taylorSine(double value, int accuracy) {
+	//reduceRange(value, &value);
+	double i = 1;
+	double q = value * value;
+	double sine = value;
+	double nextTerm = value;
+	double sign = -1;
+	double accVal = 1 / pow(10, accuracy);
+
+	while (fabs(nextTerm) > accVal) {
+		nextTerm = nextTerm * q / (2 * i * (2 * i + 1));
+		sine = sine + sign * nextTerm;
+		sign = -sign;
+		i++;
+	}
+	return sine;
+}
+
+
+
+
 int main(void) {
-	double value = 10000000;
-	int i;
-	clock_t begin, between, end;
-	begin = clock();
-	double r1, r2;
-	for (i = 0; i < 10000000; i++)
-		r1 = cordicSineOnDouble(value);
-	between = clock();
-	for (i = 0; i < 10000000; i++)
-		r2 = cordicBasedOnInt(value);
-	end = clock();
-	float t1 = between - begin;
-	float t2 = end - between;
-	printf("%.20F %.20F\n", t1, t2);
-	printf("%.10F %.10F %.10F", r1, r2, sin(value));
+	int co = 1;
+	for (co = 1; co < 6; co++) {
+
+		double value;
+		clock_t begin, b1, b2, b3, end;
+		StartCounter();
+		begin = GetCounter();
+		for (value = -10; value < 10; value += 0.01)
+			sin(value);
+		b1 = GetCounter();
+		for (value = -10; value < 10; value += 0.01)
+			taylorSine(value, 15);
+		b2 = GetCounter();
+		for (value = -10; value < 10; value += 0.01)
+			cordicSineOnDouble(value);
+		b3 = GetCounter();
+		for (value = -10; value < 10; value += 0.01)
+			cordicBasedOnInt(value);
+		end = GetCounter();
+		int t1 = b1 - begin;
+		int t2 = b2 - b1;
+		int t3 = b3 - b2;
+		int t4 = end - b3;
+		printf("test %d & %d & %d & %d & %d \\\\\n", co, t1, t2, t3, t4);
+	}
 	return 0;
 }
